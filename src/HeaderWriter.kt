@@ -2,7 +2,6 @@ import java.io.File
 import java.io.OutputStream
 import java.security.MessageDigest
 import java.util.*
-import java.math.BigInteger
 
 
 const val WEBSOCKET_MAGIC = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
@@ -38,24 +37,17 @@ class HeaderWriter {
             out.write("Accept: text/plain, text/html, text/*\r\n\r\n".toByteArray())
         }
 
-        fun wsAccept(out: OutputStream, wsSecurityKeyValue: String) {
-            val magicString = wsSecurityKeyValue + WEBSOCKET_MAGIC
-            val crypt = MessageDigest.getInstance("SHA-1")
-
-            crypt.update(magicString.toByteArray())
-
-            val sha1 = BigInteger(1, crypt.digest()).toString(16)
-
-            println("SHA-1: $sha1")
-            val result = "Sec-WebSocket-Accept: ${Base64.getEncoder().encodeToString(sha1.toByteArray())}\r\n"
-            println("Result of WS bullshit: $result")
-            out.write(result.toByteArray())
-            out.write("\r\n\r\n".toByteArray())
-        }
-
         fun wsResponse(out: OutputStream) {
             out.write("Upgrade: websocket\r\n".toByteArray())
             out.write("Connection: Upgrade\r\n".toByteArray())
+        }
+
+        fun wsAccept(out: OutputStream, wsSecurityKeyValue: String) {
+            val sha1 = MessageDigest.getInstance("SHA-1")
+                    .digest((wsSecurityKeyValue + WEBSOCKET_MAGIC).toByteArray())
+            out.write("Sec-WebSocket-Accept: ".toByteArray())
+            out.write(Base64.getEncoder().encode(sha1))
+            out.write("\r\n\r\n".toByteArray())
         }
     }
 }
